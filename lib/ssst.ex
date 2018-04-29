@@ -60,29 +60,47 @@ defmodule Ssst do
   end
 
   defp parse!([head | tail], acc) do
-    parse!(tail, [element!(head) | acc])
+    content = xmlElement(head, :content)
+    parse!(tail, [element!(content, %{}) | acc])
   end
 
   defp parse!([], acc), do: acc
 
-  defp element!(element) do
-    element
-    |> xmlElement(:content)
-    |> Enum.reduce(%{}, fn element, acc ->
-      name = xmlElement(element, :name)
+  defp element!([head | tail], acc) do
+    name = xmlElement(head, :name)
 
+    acc =
       case name do
-        :Key -> Map.put(acc, :key, text!(element))
-        :LastModified -> Map.put(acc, :last_modified, date_time!(element))
-        :ETag -> Map.put(acc, :etag, text!(element))
-        :Size -> Map.put(acc, :size, integer!(element))
-        :StorageClass -> Map.put(acc, :storage_class, text!(element))
-        :ID -> Map.put(acc, :id, text!(element))
-        :Owner -> Map.put(acc, :owner, element!(element))
-        _ -> acc
+        :Key ->
+          Map.put(acc, :key, text!(head))
+
+        :LastModified ->
+          Map.put(acc, :last_modified, date_time!(head))
+
+        :ETag ->
+          Map.put(acc, :etag, text!(head))
+
+        :Size ->
+          Map.put(acc, :size, integer!(head))
+
+        :StorageClass ->
+          Map.put(acc, :storage_class, text!(head))
+
+        :ID ->
+          Map.put(acc, :id, text!(head))
+
+        :Owner ->
+          content = xmlElement(head, :content)
+          Map.put(acc, :owner, element!(content, %{}))
+
+        _ ->
+          acc
       end
-    end)
+
+    element!(tail, acc)
   end
+
+  defp element!([], acc), do: acc
 
   defp text!(element) do
     element
