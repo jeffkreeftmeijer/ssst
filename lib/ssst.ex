@@ -34,25 +34,9 @@ defmodule Ssst do
 
   """
   def list!(url) do
-    url
-    |> get!()
-    |> document!()
-    |> parse!()
-  end
-
-  defp get!(url) do
     {:ok, {{_, 200, 'OK'}, _headers, body}} = @http.request(:get, {to_charlist(url), []}, [], [])
-
-    body
-  end
-
-  defp document!(body) do
     {document, _} = :xmerl_scan.string(body)
 
-    document
-  end
-
-  defp parse!(document) do
     '//ListBucketResult/Contents'
     |> :xmerl_xpath.string(document)
     |> parse!([])
