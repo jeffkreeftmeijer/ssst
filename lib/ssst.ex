@@ -34,13 +34,36 @@ defmodule Ssst do
 
   """
   def list!(url) do
-    {:ok, {{_, 200, 'OK'}, _headers, body}} = @http.request(:get, {to_charlist(url), []}, [], [])
-    {document, _} = :xmerl_scan.string(body)
+    {document, _} =
+      url
+      |> do_get()
+      |> :xmerl_scan.string()
 
     '//ListBucketResult/Contents'
     |> :xmerl_xpath.string(document)
     |> parse!([])
     |> Enum.reverse()
+  end
+
+  @doc """
+  Gets an object from a bucket
+
+  ## Examples
+
+      iex> Ssst.get!("https://s3.amazonaws.com/ssst-test/ssst.txt")
+      "ssst\\n"
+
+  """
+  def get!(url) do
+    url
+    |> do_get()
+    |> List.to_string()
+  end
+
+  defp do_get(url) do
+    {:ok, {{_, 200, 'OK'}, _headers, body}} = @http.request(:get, {to_charlist(url), []}, [], [])
+
+    body
   end
 
   defp parse!([head | tail], acc) do
