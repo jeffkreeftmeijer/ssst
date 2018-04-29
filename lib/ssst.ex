@@ -17,7 +17,7 @@ defmodule Ssst do
         %{
           etag: "\\"4212059ccb907291311f28f8168d0b29\\"",
           key: "ssst.txt",
-          last_modified: "2018-04-29T09:12:40.000Z",
+          last_modified: DateTime.from_naive!(~N[2018-04-29 09:12:40.000Z], "Etc/UTC"),
           size: "5",
           storage_class: "STANDARD"
         }
@@ -50,7 +50,7 @@ defmodule Ssst do
 
       %{
         key: text!(key),
-        last_modified: text!(last_modified),
+        last_modified: date_time!(last_modified),
         etag: text!(etag),
         size: text!(size),
         storage_class: text!(storage_class)
@@ -59,10 +59,22 @@ defmodule Ssst do
   end
 
   defp text!(element) do
+    element
+    |> value!()
+    |> List.to_string()
+  end
+
+  defp date_time!(element) do
+    {:ok, date_time, 0} = element
+    |> text!()
+    |> DateTime.from_iso8601()
+
+    date_time
+  end
+
+  defp value!(element) do
     [content] = xmlElement(element, :content)
 
-    content
-    |> xmlText(:value)
-    |> List.to_string()
+    xmlText(content, :value)
   end
 end
