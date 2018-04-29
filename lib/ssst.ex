@@ -18,7 +18,7 @@ defmodule Ssst do
           etag: "\\"4212059ccb907291311f28f8168d0b29\\"",
           key: "ssst.txt",
           last_modified: DateTime.from_naive!(~N[2018-04-29 09:12:40.000Z], "Etc/UTC"),
-          size: "5",
+          size: 5,
           storage_class: "STANDARD"
         }
       ]
@@ -52,7 +52,7 @@ defmodule Ssst do
         key: text!(key),
         last_modified: date_time!(last_modified),
         etag: text!(etag),
-        size: text!(size),
+        size: integer!(size),
         storage_class: text!(storage_class)
       }
     end)
@@ -70,6 +70,12 @@ defmodule Ssst do
     |> DateTime.from_iso8601()
 
     date_time
+  end
+
+  defp integer!(element) do
+    element
+    |> value!()
+    |> List.to_integer()
   end
 
   defp value!(element) do
