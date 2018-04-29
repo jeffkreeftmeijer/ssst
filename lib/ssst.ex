@@ -20,7 +20,8 @@ defmodule Ssst do
           key: "private.txt",
           last_modified: DateTime.from_naive!(~N[2018-04-29 19:43:04.000Z], "Etc/UTC"),
           size: 4,
-          storage_class: "STANDARD"
+          storage_class: "STANDARD",
+          owner: %{id: "65a011a29cdf8ec533ec3d1ccaae921c"}
         },
         %{
           etag: "\\"4212059ccb907291311f28f8168d0b29\\"",
@@ -53,22 +54,7 @@ defmodule Ssst do
 
   defp parse!(document) do
     :xmerl_xpath.string('//ListBucketResult/Contents', document)
-    |> Enum.map(fn contents ->
-      contents
-      |> xmlElement(:content)
-      |> Enum.reduce(%{}, fn element, acc ->
-        name = xmlElement(element, :name)
-
-        case name do
-          :Key -> Map.put(acc, :key, text!(element))
-          :LastModified -> Map.put(acc, :last_modified, date_time!(element))
-          :ETag -> Map.put(acc, :etag, text!(element))
-          :Size -> Map.put(acc, :size, integer!(element))
-          :StorageClass -> Map.put(acc, :storage_class, text!(element))
-          _ -> acc
-        end
-      end)
-    end)
+    |> Enum.map(&element!/1)
   end
 
   defp text!(element) do
@@ -90,6 +76,25 @@ defmodule Ssst do
     element
     |> value!()
     |> List.to_integer()
+  end
+
+  defp element!(element) do
+    element
+    |> xmlElement(:content)
+    |> Enum.reduce(%{}, fn element, acc ->
+      name = xmlElement(element, :name)
+
+      case name do
+        :Key -> Map.put(acc, :key, text!(element))
+        :LastModified -> Map.put(acc, :last_modified, date_time!(element))
+        :ETag -> Map.put(acc, :etag, text!(element))
+        :Size -> Map.put(acc, :size, integer!(element))
+        :StorageClass -> Map.put(acc, :storage_class, text!(element))
+        :ID -> Map.put(acc, :id, text!(element))
+        :Owner -> Map.put(acc, :owner, element!(element))
+        _ -> acc
+      end
+    end)
   end
 
   defp value!(element) do
