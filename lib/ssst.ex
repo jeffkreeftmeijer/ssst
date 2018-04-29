@@ -53,8 +53,35 @@ defmodule Ssst do
   end
 
   defp parse!(document) do
-    :xmerl_xpath.string('//ListBucketResult/Contents', document)
-    |> Enum.map(&element!/1)
+    '//ListBucketResult/Contents'
+    |> :xmerl_xpath.string(document)
+    |> parse!([])
+    |> Enum.reverse()
+  end
+
+  defp parse!([head | tail], acc) do
+    parse!(tail, [element!(head) | acc])
+  end
+
+  defp parse!([], acc), do: acc
+
+  defp element!(element) do
+    element
+    |> xmlElement(:content)
+    |> Enum.reduce(%{}, fn element, acc ->
+      name = xmlElement(element, :name)
+
+      case name do
+        :Key -> Map.put(acc, :key, text!(element))
+        :LastModified -> Map.put(acc, :last_modified, date_time!(element))
+        :ETag -> Map.put(acc, :etag, text!(element))
+        :Size -> Map.put(acc, :size, integer!(element))
+        :StorageClass -> Map.put(acc, :storage_class, text!(element))
+        :ID -> Map.put(acc, :id, text!(element))
+        :Owner -> Map.put(acc, :owner, element!(element))
+        _ -> acc
+      end
+    end)
   end
 
   defp text!(element) do
@@ -76,25 +103,6 @@ defmodule Ssst do
     element
     |> value!()
     |> List.to_integer()
-  end
-
-  defp element!(element) do
-    element
-    |> xmlElement(:content)
-    |> Enum.reduce(%{}, fn element, acc ->
-      name = xmlElement(element, :name)
-
-      case name do
-        :Key -> Map.put(acc, :key, text!(element))
-        :LastModified -> Map.put(acc, :last_modified, date_time!(element))
-        :ETag -> Map.put(acc, :etag, text!(element))
-        :Size -> Map.put(acc, :size, integer!(element))
-        :StorageClass -> Map.put(acc, :storage_class, text!(element))
-        :ID -> Map.put(acc, :id, text!(element))
-        :Owner -> Map.put(acc, :owner, element!(element))
-        _ -> acc
-      end
-    end)
   end
 
   defp value!(element) do
