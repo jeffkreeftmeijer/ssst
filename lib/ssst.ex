@@ -2,6 +2,7 @@ defmodule Ssst do
   import Record, only: [defrecord: 2, extract: 2]
   defrecord :xmlElement, extract(:xmlElement, from_lib: "xmerl/include/xmerl.hrl")
   defrecord :xmlText, extract(:xmlText, from_lib: "xmerl/include/xmerl.hrl")
+  @http Application.get_env(:ssst, :http, :httpc)
 
   @moduledoc """
   Ssst!
@@ -32,7 +33,7 @@ defmodule Ssst do
   end
 
   defp get!(url) do
-    {:ok, {{_, 200, 'OK'}, _headers, body}} = :httpc.request(:get, {to_charlist(url), []}, [], [])
+    {:ok, {{_, 200, 'OK'}, _headers, body}} = @http.request(:get, {to_charlist(url), []}, [], [])
 
     body
   end
