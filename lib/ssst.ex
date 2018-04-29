@@ -16,6 +16,13 @@ defmodule Ssst do
       iex> Ssst.list!("https://s3.amazonaws.com/ssst-test")
       [
         %{
+          etag: "\\"be2a401b3cab43750487fc4341ee628f\\"",
+          key: "private.txt",
+          last_modified: DateTime.from_naive!(~N[2018-04-29 19:43:04.000Z], "Etc/UTC"),
+          size: 4,
+          storage_class: "STANDARD"
+        },
+        %{
           etag: "\\"4212059ccb907291311f28f8168d0b29\\"",
           key: "ssst.txt",
           last_modified: DateTime.from_naive!(~N[2018-04-29 09:12:40.000Z], "Etc/UTC"),
@@ -47,15 +54,20 @@ defmodule Ssst do
   defp parse!(document) do
     :xmerl_xpath.string('//ListBucketResult/Contents', document)
     |> Enum.map(fn contents ->
-      [key, last_modified, etag, size, storage_class] = xmlElement(contents, :content)
+      contents
+      |> xmlElement(:content)
+      |> Enum.reduce(%{}, fn element, acc ->
+        name = xmlElement(element, :name)
 
-      %{
-        key: text!(key),
-        last_modified: date_time!(last_modified),
-        etag: text!(etag),
-        size: integer!(size),
-        storage_class: text!(storage_class)
-      }
+        case name do
+          :Key -> Map.put(acc, :key, text!(element))
+          :LastModified -> Map.put(acc, :last_modified, date_time!(element))
+          :ETag -> Map.put(acc, :etag, text!(element))
+          :Size -> Map.put(acc, :size, integer!(element))
+          :StorageClass -> Map.put(acc, :storage_class, text!(element))
+          _ -> acc
+        end
+      end)
     end)
   end
 
@@ -66,9 +78,10 @@ defmodule Ssst do
   end
 
   defp date_time!(element) do
-    {:ok, date_time, 0} = element
-    |> text!()
-    |> DateTime.from_iso8601()
+    {:ok, date_time, 0} =
+      element
+      |> text!()
+      |> DateTime.from_iso8601()
 
     date_time
   end
